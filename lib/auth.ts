@@ -14,38 +14,56 @@ export const authOptions: AuthOptions = {
         password: { label: "Password", type: "password" }
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          throw new Error('Credenciais inválidas')
-        }
-
-        const user = await prisma.user.findUnique({
-          where: {
-            email: credentials.email
+        try {
+          console.log('[AUTH] Tentando autenticar:', credentials?.email)
+          
+          if (!credentials?.email || !credentials?.password) {
+            console.log('[AUTH] Credenciais vazias')
+            throw new Error('Credenciais inválidas')
           }
-        })
 
-        if (!user || !user?.password) {
-          throw new Error('Usuário não encontrado')
-        }
+          console.log('[AUTH] Buscando usuário no banco...')
+          const user = await prisma.user.findUnique({
+            where: {
+              email: credentials.email
+            }
+          })
 
-        // Check if user is active (will work once migration is run)
-        if ('isActive' in user && !user.isActive) {
-          throw new Error('Conta inativa')
-        }
+          if (!user || !user?.password) {
+            console.log('[AUTH] Usuário não encontrado:', credentials.email)
+            throw new Error('Usuário não encontrado')
+          }
 
-        const isPasswordValid = await bcrypt.compare(
-          credentials.password,
-          user.password
-        )
+          console.log('[AUTH] Usuário encontrado:', user.email, 'isActive:', user.isActive)
 
-        if (!isPasswordValid) {
-          throw new Error('Senha incorreta')
-        }
+          // Check if user is active (will work once migration is run)
+          if ('isActive' in user && !user.isActive) {
+            console.log('[AUTH] Conta inativa')
+            throw new Error('Conta inativa')
+          }
 
-        return {
-          id: user.id,
-          email: user.email,
-          name: user.name || undefined,
+          console.log('[AUTH] Comparando senhas...')
+          const isPasswordValid = await bcrypt.compare(
+            credentials.password,
+            user.password
+          )
+
+          console.log('[AUTH] Senha válida:', isPasswordValid)
+
+          if (!isPasswordValid) {
+            console.log('[AUTH] Senha incorreta para:', user.email)
+            throw new Error('Senha incorreta')
+          }
+
+          console.log('[AUTH] Login bem-sucedido:', user.email)
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.name || undefined,
+          }
+        } catch (error) {
+          console.error('[AUTH] Erro na autenticação:', error)
+          throw error
         }
       }
     })
