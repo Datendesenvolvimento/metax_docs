@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server"
-import { Resend } from 'resend'
 import { prisma } from "@/lib/prisma"
 import { generateResetToken } from "@/lib/utils/auth/token_password_recovery"
-
-const resend = new Resend(process.env.RESEND_API_KEY)
+import { criarTransporter } from "@/lib/documentos/email-sender"
+import { EmailConfig } from "@/types/documentos"
 
 export async function POST(request: Request) {
   try {
@@ -40,73 +39,102 @@ export async function POST(request: Request) {
       }
     })
 
-    const resetLink = `${process.env.NEXT_PUBLIC_APP_URL}/reset-password/${resetToken}`
+    const resetLink = `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/reset-password/${resetToken}`
 
-    await resend.emails.send({
-      from: `${process.env.RESEND_NAME_TO_FROM} <naoresponda@${process.env.RESEND_DOMAIN}>`,
-      to: email,
-      subject: 'Recuperação de Senha',
-      html: `
-        <!DOCTYPE html>
-        <html>
-          <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          </head>
-          <body style="margin: 0; padding: 0; background-color: #f3f4f6; font-family: Arial, sans-serif;">
-            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width: 600px; margin: 0 auto; padding: 20px;">
-              <tr>
-                <td style="background-color: white; padding: 40px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);">
-                  <!-- Cabeçalho -->
-                  <div style="text-align: center; margin-bottom: 32px; padding-bottom: 32px; border-bottom: 1px solid #e5e7eb;">
-                    <h1 style="color: #1a1f36; font-size: 24px; font-weight: 600; margin: 0;">
-                      Recuperação de Senha
-                    </h1>
-                  </div>
+    // Verifica se EMAIL_CREDENCIAL está configurado
+    const emailCredBase64 = process.env.EMAIL_CREDENCIAL
+    
+    if (emailCredBase64) {
+      try {
+        // Decodifica credenciais de email
+        const emailCredJson = Buffer.from(emailCredBase64, 'base64').toString('utf-8')
+        const emailConfig: EmailConfig = JSON.parse(emailCredJson)
 
-                  <!-- Conteúdo -->
-                  <div style="color: #1a1f36; line-height: 1.5;">
-                    <p style="color: #4b5563; margin-bottom: 24px;">
-                      Olá,
-                    </p>
-                    
-                    <p style="color: #4b5563; margin-bottom: 24px;">
-                      Recebemos uma solicitação para redefinir sua senha. Se você não fez esta solicitação, por favor, ignore este email.
-                    </p>
-                    
-                    <div style="text-align: center; margin: 32px 0;">
-                      <a href="${resetLink}"
-                         style="display: inline-block; background-color: #1a1f36; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 500; text-align: center;">
-                        Redefinir Senha
-                      </a>
-                    </div>
-                    
-                    <p style="color: #4b5563; margin-bottom: 24px;">
-                      Este link é válido por 1 hora. Após esse período, você precisará solicitar um novo link de recuperação.
-                    </p>
-                    
-                    <p style="color: #4b5563; margin-bottom: 24px;">
-                      Se você não conseguir clicar no botão acima, copie e cole o link abaixo no seu navegador:
-                    </p>
-                    
-                    <p style="background-color: #f3f4f6; padding: 12px; border-radius: 4px; word-break: break-all; font-size: 14px; color: #4b5563;">
-                      ${resetLink}
-                    </p>
-                  </div>
+        // Cria transporter
+        const transporter = criarTransporter(emailConfig)
 
-                  <!-- Rodapé -->
-                  <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #e5e7eb; text-align: center;">
-                    <p style="color: #6b7280; font-size: 14px; margin: 0;">
-                      © ${new Date().getFullYear()} Daten Consultoria. Todos os direitos reservados.
-                    </p>
-                  </div>
-                </td>
-              </tr>
-            </table>
-          </body>
-        </html>
-      `
-    })
+        // Envia e-mail
+        await transporter.sendMail({
+          from: emailConfig.smtp_from,
+          to: email,
+          subject: 'Recuperação de Senha - Meta.X',
+          html: `
+            <!DOCTYPE html>
+            <html>
+              <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              </head>
+              <body style="margin: 0; padding: 0; background-color: #F9FAFC; font-family: Arial, sans-serif;">
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width: 600px; margin: 0 auto; padding: 20px;">
+                  <tr>
+                    <td style="background-color: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+                      <!-- Cabeçalho -->
+                      <div style="text-align: center; margin-bottom: 32px; padding-bottom: 32px; border-bottom: 2px solid #0F79BD;">
+                        <h1 style="color: #001847; font-size: 28px; font-weight: 700; margin: 0;">
+                          🔐 Recuperação de Senha
+                        </h1>
+                        <p style="color: #0F79BD; font-size: 14px; margin-top: 8px;">
+                          Sistema Meta.X
+                        </p>
+                      </div>
+
+                      <!-- Conteúdo -->
+                      <div style="color: #001847; line-height: 1.6;">
+                        <p style="color: #4b5563; margin-bottom: 24px; font-size: 15px;">
+                          Olá,
+                        </p>
+                        
+                        <p style="color: #4b5563; margin-bottom: 24px; font-size: 15px;">
+                          Recebemos uma solicitação para redefinir sua senha. Se você não fez esta solicitação, por favor, ignore este email.
+                        </p>
+                        
+                        <div style="text-align: center; margin: 32px 0;">
+                          <a href="${resetLink}"
+                             style="display: inline-block; background: linear-gradient(135deg, #001847 0%, #0F79BD 100%); color: white; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: 600; text-align: center; font-size: 16px; box-shadow: 0 4px 6px rgba(0, 24, 71, 0.3);">
+                            Redefinir Minha Senha
+                          </a>
+                        </div>
+                        
+                        <p style="color: #4b5563; margin-bottom: 24px; font-size: 14px;">
+                          ⏱️ Este link é válido por <strong>1 hora</strong>. Após esse período, você precisará solicitar um novo link de recuperação.
+                        </p>
+                        
+                        <p style="color: #4b5563; margin-bottom: 12px; font-size: 14px;">
+                          Se você não conseguir clicar no botão acima, copie e cole o link abaixo no seu navegador:
+                        </p>
+                        
+                        <p style="background-color: #F9FAFC; padding: 12px; border-radius: 6px; word-break: break-all; font-size: 12px; color: #0F79BD; border: 1px solid #E5E7EB;">
+                          ${resetLink}
+                        </p>
+
+                        <div style="margin-top: 32px; padding: 16px; background-color: #FEF3C7; border-left: 4px solid #F59E0B; border-radius: 6px;">
+                          <p style="color: #92400E; font-size: 13px; margin: 0;">
+                            <strong>⚠️ Segurança:</strong> Se você não solicitou esta alteração, recomendamos que altere sua senha imediatamente.
+                          </p>
+                        </div>
+                      </div>
+
+                      <!-- Rodapé -->
+                      <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #E5E7EB; text-align: center;">
+                        <p style="color: #6b7280; font-size: 13px; margin: 0;">
+                          © ${new Date().getFullYear()} Meta.X. Todos os direitos reservados.
+                        </p>
+                      </div>
+                    </td>
+                  </tr>
+                </table>
+              </body>
+            </html>
+          `
+        })
+      } catch (emailError) {
+        console.error('Erro ao enviar e-mail de recuperação:', emailError)
+        // Continua mesmo se falhar o envio do e-mail
+      }
+    } else {
+      console.warn('EMAIL_CREDENCIAL não configurado. E-mail de recuperação não será enviado.')
+    }
 
     return NextResponse.json(
       { message: "Se existe uma conta com este email, você receberá um link para redefinir sua senha." },
