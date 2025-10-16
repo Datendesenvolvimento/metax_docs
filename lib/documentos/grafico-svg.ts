@@ -4,6 +4,7 @@
  */
 
 import { HistoricoMensal } from '@/types/documentos'
+import sharp from 'sharp'
 
 // Paleta de cores Meta.X
 const COR_PRINCIPAL = "#001847"
