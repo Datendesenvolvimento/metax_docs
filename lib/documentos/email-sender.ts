@@ -6,7 +6,7 @@
 import nodemailer from 'nodemailer'
 import { DocumentoRegistro, HistoricoMensal, EmailConfig, StatusLegenda } from '@/types/documentos'
 import { calcularRelevanciaELegenda, getCorLegenda } from './regras-negocio'
-import { gerarGraficoSVG } from './grafico-svg'
+import { gerarGraficoPNG } from './grafico-svg'
 import fs from 'fs'
 import path from 'path'
 
@@ -162,8 +162,8 @@ export async function montarEmailHTML(
   logoBase64: string,
   gerarGrafico: boolean = true
 ): Promise<string> {
-  // 🔹 Gera o gráfico SVG de pendências
-  const graficoSVG = gerarGrafico ? gerarGraficoSVG(historico) : null
+  // 🔹 Gera o gráfico PNG de pendências (base64)
+  const graficoPngBase64 = gerarGrafico ? await gerarGraficoPNG(historico) : null
   
   const tabelaHistHtml = gerarTabelaHistorico(historico, projeto)
   const tabelaDocsHtml = documentosParaHTML(documentos)
@@ -239,8 +239,10 @@ export async function montarEmailHTML(
       <div style="display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap;">
         <!-- Gráfico de Pendências e Resumo por Status -->
         <div style="flex:1;min-width:320px;">
-          ${graficoSVG 
-            ? `<div style="background:white;border-radius:8px;padding:10px;box-shadow:0 1px 3px rgba(0,0,0,0.1);margin-bottom:12px;">${graficoSVG}</div>` 
+          ${graficoPngBase64 
+            ? `<div style="background:white;border-radius:8px;padding:10px;box-shadow:0 1px 3px rgba(0,0,0,0.1);margin-bottom:12px;">
+                <img src="data:image/png;base64,${graficoPngBase64}" alt="Gráfico de Pendências" style="width:100%;max-width:520px;display:block;border-radius:6px;">
+              </div>` 
             : `<div style="background:#F9FAFB;border:2px dashed #D1D5DB;border-radius:8px;padding:40px 20px;text-align:center;margin-bottom:12px;">
                 <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="2" style="margin:0 auto 12px;">
                   <line x1="18" y1="20" x2="18" y2="10"></line>

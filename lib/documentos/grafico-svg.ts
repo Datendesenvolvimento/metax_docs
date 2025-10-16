@@ -111,3 +111,28 @@ export function gerarGraficoSVG(historico: HistoricoMensal[]): string | null {
   `
 }
 
+/**
+ * Converte o SVG para PNG e retorna base64
+ * Isso garante que funciona em todos os clientes de e-mail (Outlook, Gmail, etc)
+ */
+export async function gerarGraficoPNG(historico: HistoricoMensal[]): Promise<string | null> {
+  const svg = gerarGraficoSVG(historico)
+  
+  if (!svg) {
+    return null
+  }
+
+  try {
+    // Converte SVG para PNG usando sharp
+    const pngBuffer = await sharp(Buffer.from(svg))
+      .png()
+      .toBuffer()
+    
+    // Retorna base64
+    return pngBuffer.toString('base64')
+  } catch (error) {
+    console.error('Erro ao converter SVG para PNG:', error)
+    return null
+  }
+}
+
