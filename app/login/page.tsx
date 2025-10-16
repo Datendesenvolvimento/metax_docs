@@ -1,34 +1,29 @@
-import Header from '@/components/layout/header-basic'
-import Footer from '@/components/layout/footer-basic'
 import LoginForm from '@/components/layout/login-form'
 import { Suspense } from 'react'
 import Image from 'next/image'
 
 export default function LoginPage() {
   return (
-    <div className="flex flex-col min-h-screen">
-      <Header />
-      <main className="flex-grow flex items-center justify-center bg-gradient-to-br from-metax-light via-white to-blue-50 py-12">
-        <div className="w-full max-w-md px-4">
+    <div className="flex flex-col min-h-screen bg-gradient-to-br from-metax-primary via-metax-primary/90 to-metax-secondary">
+      <main className="flex-grow flex items-center justify-center py-12 px-4">
+        <div className="w-full max-w-md">
           <div className="bg-white shadow-2xl rounded-2xl overflow-hidden border border-gray-100">
-            {/* Header com Logo e Cores Meta.X */}
+            {/* Logo Meta.X Negativo */}
             <div className="bg-gradient-to-r from-metax-primary to-metax-secondary text-white p-8 text-center">
-              <div className="flex justify-center mb-4">
-                <div className="bg-white rounded-full p-4 shadow-lg">
-                  <Image
-                    src="/images/logo.png"
-                    alt="Meta.X Logo"
-                    width={80}
-                    height={80}
-                    className="object-contain"
-                  />
-                </div>
+              <div className="flex justify-center mb-6">
+                <Image
+                  src="/images/logo_negative.png"
+                  alt="Meta.X Logo"
+                  width={140}
+                  height={140}
+                  className="object-contain drop-shadow-lg"
+                />
               </div>
               <h1 className="text-2xl font-bold mb-2">
-                Bem-vindo ao Meta.X
+                Bem-vindo
               </h1>
               <p className="text-blue-100 text-sm">
-                Sistema de Gestão de Documentos
+                Integração de Documentos Meta.X Interno TIme COA
               </p>
             </div>
 
@@ -63,14 +58,8 @@ export default function LoginPage() {
               </div>
             </div>
           </div>
-
-          {/* Informação adicional */}
-          <p className="text-center text-sm text-gray-500 mt-6">
-            © 2025 Meta.X. Todos os direitos reservados.
-          </p>
         </div>
       </main>
-      <Footer />
     </div>
   )
 }
